@@ -1,3 +1,8 @@
+# Proyecto: Tic-Tac-Toe Engine
+# Autor: Santiago Marino
+# Email: santiago.mmarino@gmail.com
+# Año de desarrollo: 2026
+
 from tictactoe_engine import TicTacToe
 import numpy as np
 from tictactoe_engine import PlayerAgent
@@ -6,11 +11,13 @@ from tictactoe_engine import PlayerAgent
 
 class Player(PlayerAgent):
     def __init__(self, playerID, name="Player"):
+        """Inicializa un jugador humano con su identificador y nombre visible."""
         self.playerID = playerID
         self.player_name = name
         
 
     def act(self, state):
+        """Solicita al usuario una casilla valida y devuelve su indice interno."""
         self.state = state
 
         while True:
@@ -33,6 +40,7 @@ class Player(PlayerAgent):
 
 
     def event(self, message):
+        """Muestra al usuario los cambios de estado y el resultado de la partida."""
         if isinstance(message, tuple) and message[0] == "end":
             print(f"{self.player_name} recibe el resultado: {message[1]}")
             return

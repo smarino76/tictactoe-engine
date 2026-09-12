@@ -1,3 +1,8 @@
+# Proyecto: Tic-Tac-Toe Engine
+# Autor: Santiago Marino
+# Email: santiago.mmarino@gmail.com
+# Año de desarrollo: 2026
+
 from tictactoe_engine import TicTacToe
 from agent_human import Player as HumanPlayer
 from expert_ai_agent import ExpertAIAgent
@@ -14,12 +19,14 @@ player_2 = ExpertAIAgent(name="AI Player 2")
 game = TicTacToe(player_1, player_2)
 
 def validate_action(action):
+    """Comprueba que la accion esta dentro del tablero y apunta a una casilla libre."""
     if action >= 0 and action < 9:
         if game.state[action] is None:
             return True
     return False
 
 def players_sync_broadcast(msg):
+    """Envia el mismo mensaje a los dos agentes de la partida."""
     for pl in range(2):
         game.sync(game.players.get(pl), msg)
 

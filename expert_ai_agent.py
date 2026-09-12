@@ -1,3 +1,8 @@
+# Proyecto: Tic-Tac-Toe Engine
+# Autor: Santiago Marino
+# Email: santiago.mmarino@gmail.com
+# Año de desarrollo: 2026
+
 import os
 
 import joblib
@@ -7,6 +12,7 @@ from tictactoe_engine import PlayerAgent
 
 class ExpertAIAgent(PlayerAgent):
     def __init__(self, name="AI Player 1", model_path=None):
+        """Inicializa el agente experto y carga el modelo entrenado si existe."""
         self.player_name = name
         self.model_path = model_path or f"{name}_model.pkl"
         self.model = None
@@ -16,6 +22,7 @@ class ExpertAIAgent(PlayerAgent):
             self.model = joblib.load(self.model_path)
 
     def act(self, state):
+        """Elige la jugada disponible con mayor valor estimado por el modelo."""
         self.state = state
         available_actions = get_available_actions(state)
 
@@ -40,4 +47,5 @@ class ExpertAIAgent(PlayerAgent):
         return available_actions[best_index]
 
     def event(self, message):
+        """Acepta eventos del motor; el agente experto no necesita procesarlos."""
         pass

@@ -1,3 +1,8 @@
+# Proyecto: Tic-Tac-Toe Engine
+# Autor: Santiago Marino
+# Email: santiago.mmarino@gmail.com
+# Año de desarrollo: 2026
+
 import argparse
 import contextlib
 import io
@@ -8,6 +13,7 @@ from tictactoe_engine import TicTacToe
 
 
 def play_game(game):
+	"""Ejecuta una partida completa y comunica el resultado a cada agente."""
 	game.reset()
 
 	while not game.done:
@@ -40,6 +46,7 @@ def play_game(game):
 
 
 def train(number_of_games):
+	"""Entrena dos agentes mediante el numero de partidas indicado."""
 	player_1 = ai.Player(name="AI Player 1", load_model=False, penalty="hard", epsilon=0.2)
 	player_2 = ai.Player(name="AI Player 2", load_model=False, penalty="hard", epsilon=0.2)
 	game = TicTacToe(player_1, player_2)
@@ -62,6 +69,7 @@ def train(number_of_games):
 
 
 def main():
+	"""Lee los argumentos de consola y pone en marcha el entrenamiento."""
 	parser = argparse.ArgumentParser(
 		description="Entrena los agentes de tres en raya."
 	)

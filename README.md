@@ -1,3 +1,10 @@
+<!--
+Proyecto: Tic-Tac-Toe Engine
+Autor: Santiago Marino
+Email: santiago.mmarino@gmail.com
+Año de desarrollo: 2026
+-->
+
 # Tic-Tac-Toe Engine
 
 A small, extensible Tic-Tac-Toe environment for playing games between human, random, rule-based, and machine-learning agents. The project is intended both as a simple agent-integration example and as a compact research playground for reinforcement-learning ideas.

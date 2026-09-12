@@ -1,3 +1,8 @@
+# Proyecto: Tic-Tac-Toe Engine
+# Autor: Santiago Marino
+# Email: santiago.mmarino@gmail.com
+# Año de desarrollo: 2026
+
 import random
 from abc import ABC, abstractmethod
 
@@ -5,16 +10,19 @@ from abc import ABC, abstractmethod
 class PlayerAgent(ABC):
     @abstractmethod
     def act(self, state):
+        """Elige y devuelve una accion valida para el estado recibido."""
         pass
 
     @abstractmethod
     def event(self, message):
+        """Procesa una notificacion enviada por el motor de juego."""
         pass
  
 
 class TicTacToe:
 
     def __init__(self, player_0, player_1):
+        """Crea una partida y registra los dos agentes participantes."""
         player_0.playerID = 0
         player_1.playerID = 1
         # Players participating in the game
@@ -30,11 +38,12 @@ class TicTacToe:
         self.winner = None
 
     def sync(self, player, message):
+        """Entrega un mensaje a un agente para mantenerlo sincronizado."""
         player.event(message)
 
 
     def reset(self):
-        """Start a new game."""
+        """Reinicia la partida, los marcadores y el jugador que comienza."""
 
         # Empty board
         self.board = [None] * 9
@@ -62,13 +71,13 @@ class TicTacToe:
 
     @property
     def state(self):
-        """Return a copy of the current board."""
+        """Devuelve una copia del tablero para evitar cambios externos."""
 
         return self.board.copy()
 
 
     def valid_actions(self):
-        """Return the indexes of the empty cells."""
+        """Devuelve los indices de las casillas que aun estan disponibles."""
 
         return [
             i
@@ -78,14 +87,10 @@ class TicTacToe:
 
 
     def step(self, action):
-        """
-        Execute one move.
+        """Ejecuta una jugada y devuelve estado, recompensas, fin e informacion.
 
-        Returns:
-            state
-            reward
-            done
-            info
+        La recompensa es positiva para el ganador, negativa para el perdedor y
+        cero en caso de empate o mientras la partida continua.
         """
 
         if self.done:
@@ -180,6 +185,7 @@ class TicTacToe:
 
 
     def _check_winner(self, marker):
+        """Comprueba si el marcador indicado ocupa una combinacion ganadora."""
 
         winning_combinations = [
 

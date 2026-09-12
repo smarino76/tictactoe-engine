@@ -1,3 +1,8 @@
+# Proyecto: Tic-Tac-Toe Engine
+# Autor: Santiago Marino
+# Email: santiago.mmarino@gmail.com
+# Año de desarrollo: 2026
+
 import os
 
 import joblib
@@ -12,17 +17,21 @@ WINNER = 3
 
 
 def get_random_action(state):
+    """Elige al azar una de las acciones disponibles del tablero."""
     available_actions = get_available_actions(state)
     return np.random.choice(available_actions)
 
 def get_available_actions(state):
+    """Devuelve los indices de las casillas vacias del estado."""
     return [i for i, x in enumerate(state) if x is None]
 
 def is_first_move(state):
+    """Indica si el tablero no contiene ningun movimiento."""
     return all(x is None for x in state)
 
 
 def encode_state(state, own_marker):
+    """Convierte el tablero en valores numericos desde la perspectiva del agente."""
     return [
         0 if cell is None else 1 if cell == own_marker else -1
         for cell in state
@@ -37,6 +46,12 @@ def encode_state_action(state, own_marker, action):
 
 
 def update_targets(value, targets, target_rate=0.9, penalty='soft'):
+    """Propaga hacia atras el resultado de una partida sobre sus jugadas.
+
+    Los valores intermedios se reducen con ``target_rate`` y una penalizacion
+    distinta para victorias y derrotas, para entrenar al modelo con el contexto
+    de toda la secuencia.
+    """
     if value == 1:
         n = len(targets) - 1
         for i in range(n - 1, -1, -1):
@@ -77,6 +92,7 @@ class Player(PlayerAgent):
         load_model=True,
         epsilon=0.2,
     ):
+        """Inicializa un agente, su modelo opcional y sus datos de entrenamiento."""
         self.playerID = playerID
         self.player_name = name
         self.features = []
@@ -93,6 +109,7 @@ class Player(PlayerAgent):
 
 
     def act(self, state):
+        """Selecciona una jugada mediante exploracion aleatoria o el modelo."""
         self.state = state
 
         available_actions = get_available_actions(self.state)
@@ -129,6 +146,7 @@ class Player(PlayerAgent):
 
 
     def event(self, message):
+        """Recibe eventos del motor y entrena el modelo al terminar la partida."""
         if isinstance(message, tuple) and message[0] == "end":
             m = message
         else:

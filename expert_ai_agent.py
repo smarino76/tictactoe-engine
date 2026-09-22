@@ -6,7 +6,7 @@
 import os
 
 import joblib
-from agent_ai import encode_state_action, get_available_actions
+from agents.ai.inverse_propagation_agent import encode_state_action, get_available_actions
 from tictactoe_engine import PlayerAgent
 
 

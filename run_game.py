@@ -4,14 +4,13 @@
 # Año de desarrollo: 2026
 
 from tictactoe_engine import TicTacToe
-from agent_human import Player as HumanPlayer
+from agents.agent_human import Player as HumanPlayer
 from expert_ai_agent import ExpertAIAgent
-import numpy as np
 
 
 
 player_1 = HumanPlayer(playerID=0, name="Humano")
-player_2 = ExpertAIAgent(name="AI Player 2")
+player_2 = ExpertAIAgent(name="AI Player 1")
 
 
 
@@ -31,15 +30,25 @@ def players_sync_broadcast(msg):
         game.sync(game.players.get(pl), msg)
 
 
-players_sync_broadcast("start% inizializing game")
+def draw_board(state):
+    """Redibuja el tablero en una posicion fija de la terminal."""
+    print("\033[2J\033[H", end="")
+    print("########## TicTacToe #########")
+    print()
+    for row in range(3):
+        cells = []
+        for column in range(3):
+            index = row * 3 + column
+            cells.append(state[index] or str(index + 1))
+        print(f" {cells[0]} | {cells[1]} | {cells[2]} ")
+        if row < 2:
+            print("---+---+---")
+    print()
+
+
 state = game.reset()
 
-state_matrix = np.array(state).reshape(3,3)
-
-print("Cargando el juego...")
-print("########## TicTacToe #########")
-
-print(state_matrix)
+draw_board(state)
 
 
 
@@ -52,7 +61,7 @@ while not game.done:
 
     if validate_action(action):
         status = game.step(action)
-        #print(f"\n{np.array(game.state).reshape(3,3)}")
+        draw_board(game.state)
         #game.sync(game.players.get(game.current_player), f"status% {status}")
     else:
         game.sync(game.players.get(game.current_player), "canceled% game canceled")

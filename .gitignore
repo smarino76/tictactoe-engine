@@ -10,7 +10,7 @@ env/
 ENV/
 
 # Generated machine-learning models
-*.pkl
+#*.pkl
 
 # Test, coverage, and tooling caches
 .pytest_cache/

@@ -8,13 +8,18 @@ import contextlib
 import io
 import sys
 
-import agent_ai as ai
+import agents.ai.critical_move_propagation_agent as cma
+import agents.ai.inverse_propagation_agent as ipa
+
 from tictactoe_engine import TicTacToe
 
 
 def play_game(game):
 	"""Ejecuta una partida completa y comunica el resultado a cada agente."""
 	game.reset()
+	starting_player = game.current_player
+	for player_id, player in game.players.items():
+		player.started_first = player_id == starting_player
 
 	while not game.done:
 		player = game.players[game.current_player]
@@ -45,10 +50,23 @@ def play_game(game):
 		player.event(("end", result))
 
 
-def train(number_of_games):
+def train(number_of_games, use_replay=True):
 	"""Entrena dos agentes mediante el numero de partidas indicado."""
-	player_1 = ai.Player(name="AI Player 1", load_model=False, penalty="hard", epsilon=0.2)
-	player_2 = ai.Player(name="AI Player 2", load_model=False, penalty="hard", epsilon=0.2)
+	player_1 = cma.CriticalMovePropagationAgent(
+		name="AI Player 1",
+		load_model=False,
+		penalty="hard",
+		epsilon=0.3,
+		use_replay=use_replay,
+	)
+ 
+	player_2 = ipa.InversePorpagationAgent(
+		name="AI Player 2",
+		load_model=False,
+		penalty="hard",
+		epsilon=0.15,
+		use_replay=use_replay,
+	)
 	game = TicTacToe(player_1, player_2)
 
 	progress_width = 40
@@ -80,12 +98,19 @@ def main():
 		default=4000,
 		help="Numero de partidas a ejecutar (por defecto: 4000).",
 	)
+	parser.add_argument(
+		"--no-replay",
+		dest="use_replay",
+		action="store_false",
+		default=True,
+		help="Entrena cada partida solo con sus propios datos.",
+	)
 	args = parser.parse_args()
 
 	if args.number_of_games < 1:
 		parser.error("number_of_games debe ser mayor que cero")
 
-	train(args.number_of_games)
+	train(args.number_of_games, use_replay=args.use_replay)
 
 
 if __name__ == "__main__":

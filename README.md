@@ -14,9 +14,9 @@ A small, extensible Tic-Tac-Toe environment for playing games between human, ran
 - A nine-cell Tic-Tac-Toe environment with a Gym-like `reset`, `state`, `valid_actions`, and `step` flow.
 - A small abstract agent interface that custom players can implement.
 - Human and neural-network agents included.
-- Self-play training with an `MLPRegressor`.
+- Self-play comparison between two propagation strategies using `MLPRegressor`.
 - Model persistence through `joblib`.
-- Reward propagation from the final game result to earlier moves.
+- Strategic reward propagation from the final game result to earlier moves.
 
 ## Requirements
 
@@ -35,13 +35,13 @@ There is currently no `requirements.txt`; the command above lists the packages u
 
 ## Run A Game
 
-`run_game.py` starts a human-versus-trained-agent game:
+`run_game.py` starts a human-versus-trained-agent game and redraws the board in a fixed terminal position:
 
 ```bash
 python run_game.py
 ```
 
-The human player enters a cell from `1` to `9`. The board indexes used by the engine and by custom agents are zero-based:
+The human player enters a cell from `1` to `9`. Empty cells remain numbered on screen. The board indexes used by the engine and by custom agents are zero-based:
 
 ```text
 0 | 1 | 2
@@ -57,7 +57,7 @@ Before playing against the expert agent, train its model:
 python train.py 4000
 ```
 
-The argument is the number of self-play games and defaults to `4000` when omitted. Training writes model files such as `AI Player 1_model.pkl` and `AI Player 2_model.pkl` in the current directory. `run_game.py` uses the model for `AI Player 2`.
+The argument is the number of self-play games and defaults to `4000` when omitted. Training writes `AI Player 1_model.pkl` and `AI Player 2_model.pkl` in the current directory. `run_game.py` uses `AI Player 1_model.pkl`.
 
 ## Engine API
 
@@ -183,9 +183,14 @@ The engine sets these attributes on each agent during initialization and reset:
 
 An agent that only needs `act` can implement `event` as `pass`. A learning agent can use the `end` tuple to assign a final reward and train after the complete game.
 
-## How The Included Learning Agent Works
+## How The Included Learning Agents Work
 
-`agent_ai.Player` is an online value-learning example based on `sklearn.neural_network.MLPRegressor`.
+The project includes two online value-learning agents based on `sklearn.neural_network.MLPRegressor`:
+
+- `agents/ai/inverse_propagation_agent.py`: the original strategy, which propagates the final result backward with a penalty exponent.
+- `agents/ai/critical_move_propagation_agent.py`: the experimental strategy, which gives greater credit to strategically critical moves near the end of a winning sequence and greater blame to the earlier decisive move in a losing sequence.
+
+The current training script pits the critical-move agent (`AI Player 1`) against the inverse-propagation agent (`AI Player 2`).
 
 ### State-action features
 
@@ -211,7 +216,7 @@ The `epsilon` parameter controls exploration:
 
 After each game, epsilon decays but never goes below `0.05`.
 
-### End-of-game targets
+### End-of-game targets: inverse propagation
 
 During a game, every selected action is stored in `features` and receives a temporary target of `0.0`. The final move is then assigned:
 
@@ -219,7 +224,18 @@ During a game, every selected action is stored in `features` and receives a temp
 - `-1.0` for a loss;
 - `0.0` for a draw.
 
-`update_targets` propagates credit backward through earlier moves. With the default soft penalty, earlier winning moves receive smaller positive values and earlier losing moves receive smaller negative values. This gives the regressor continuous targets rather than only three categorical labels.
+In the inverse-propagation agent, `update_targets` propagates credit backward through earlier moves. The penalty exponent depends on the selected `soft` or `hard` mode. This gives the regressor continuous targets rather than only three categorical labels.
+
+### End-of-game targets: critical-move propagation
+
+The critical-move agent uses a different heuristic:
+
+- win: the penultimate action receives `+1.0`, the final action receives `+0.9`, and earlier actions receive decreasing values;
+- loss: the antepenultimate action receives `-1.0`, the penultimate action receives `-0.9`, and the final action receives `-0.81`;
+- draw after starting first: every action receives `0.0`;
+- draw after starting second: every action receives `+0.25`.
+
+The agent stores only its own actions, so `penultimate` and `antepenultimate` refer to the agent's action history, not all moves made on the board.
 
 ### `partial_fit` and replay lists
 
@@ -234,7 +250,7 @@ self.model.partial_fit(
 )
 ```
 
-`features` and `target` contain the current game's moves and targets. `replay_features` and `replay_targets` are longer-lived in-memory lists that accumulate examples while the same `Player` object remains alive. `extend` adds each item from the source list individually, preserving the one-input/one-target correspondence.
+`features` and `target` contain the current game's moves and targets. `replay_features` and `replay_targets` are longer-lived in-memory lists that accumulate examples while the same agent object remains alive. `extend` adds each item from the source list individually, preserving the one-input/one-target correspondence. With `--no-replay`, `partial_fit` receives only `features` and `target` from the current game.
 
 The lists are not serialized. When the Python process exits, the replay history is lost. Only the fitted model is saved with `joblib.dump`. The training script keeps both agents alive and reuses them across all requested games, so replay data accumulates during one training run.
 
@@ -246,6 +262,12 @@ The lists are not serialized. When the Python process exits, the replay history 
 python train.py 10000
 ```
 
+By default, each update replays all examples collected during the current run. To use online training with only the current game in each `partial_fit` call, run:
+
+```bash
+python train.py 10000 --no-replay
+```
+
 For each game:
 
 1. The board, markers, and starting player are reset.
@@ -254,7 +276,7 @@ For each game:
 4. The final transition is sent to both agents through `event(("end", result))`.
 5. Each agent propagates targets, calls `partial_fit`, and saves its model.
 
-The training command suppresses per-move output and displays a progress bar. Increase the game count for more experience, but remember that this implementation retains replay examples in memory for the duration of the run.
+The training command suppresses per-move output and displays a progress bar. Increase the game count for more experience, but remember that replay mode retains all replay examples in memory for the duration of the run. Model files are overwritten after each completed game.
 
 ## Research Notes And Limitations
 
@@ -264,16 +286,17 @@ This is a deliberately small educational environment, not a complete reinforceme
 - The model predicts values for state-action pairs; it does not directly predict a class or a move.
 - Markers and the starting player are randomized on reset, which helps reduce first-player bias.
 - The fitted model is persisted, but replay examples are not persisted between processes.
-- `partial_fit` is called with the accumulated in-memory examples each time a game ends.
+- In replay mode, `partial_fit` is called with the accumulated in-memory examples each time a game ends; `--no-replay` uses only the current game's examples.
 - The engine trusts agents to return a valid action; callers should validate actions before calling `step` or handle the `ValueError` raised by the engine.
 - The current example stores model files in the working directory. Use an explicit `model_path` when integrating an agent into another application.
 
 Useful files for experiments:
 
 - `tictactoe_engine.py`: environment and agent base class;
-- `agent_ai.py`: trainable self-play agent and target propagation;
+- `agents/ai/inverse_propagation_agent.py`: original trainable agent and propagation strategy;
+- `agents/ai/critical_move_propagation_agent.py`: critical-move trainable agent and propagation strategy;
 - `expert_ai_agent.py`: model-only inference agent;
-- `agent_human.py`: console human agent;
+- `agents/agent_human.py`: console human agent;
 - `train.py`: self-play training loop;
 - `run_game.py`: human-versus-agent example.
 

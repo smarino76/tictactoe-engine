@@ -45,43 +45,53 @@ def encode_state_action(state, own_marker, action):
     return encode_state(state, own_marker) + action_encoding
 
 
-def update_targets(value, targets, target_rate=0.9, penalty='soft'):
-    """Propaga hacia atras el resultado de una partida sobre sus jugadas.
+def update_targets(
+    value,
+    targets,
+    target_rate=0.9,
+    penalty='soft',
+    started_first=True,
+):
+    """Asigna credito dando prioridad a las acciones estrategicamente criticas."""
+    if not targets:
+        return
 
-    Los valores intermedios se reducen con ``target_rate`` y una penalizacion
-    distinta para victorias y derrotas, para entrenar al modelo con el contexto
-    de toda la secuencia.
-    """
-    if value == 1:
-        n = len(targets) - 1
-        for i in range(n - 1, -1, -1):
-            if targets[i] == 0:
-                if penalty == 'soft':
-                    targets[i] = np.power(targets[i + 1] * target_rate, 2)
-                elif penalty == 'hard': 
-                    targets[i] = np.power(targets[i + 1] * target_rate, 4)
-            else:
-                break
-        print(f"Ganaste la partida {len(targets)}:{targets}")
-
-    elif value == -1:
-        n = len(targets) - 1
-        for i in range(n - 1, -1, -1):
-            if targets[i] == 0:
-                if penalty == 'soft':
-                    targets[i] = np.power(targets[i + 1] * target_rate, 3)
-                elif penalty == 'hard': 
-                    targets[i] = np.power(targets[i + 1] * target_rate, 5)
-            else:
-                break
-        print(f"Perdiste la partida {len(targets)}:{targets}")
-
-    else:
+    if value == 0:
+        draw_target = 0.0 if started_first else 0.25
+        targets[:] = [draw_target] * len(targets)
         print(f"Empate en la partida {len(targets)}:{targets}")
+        return
+
+    sign = 1 if value > 0 else -1
+
+    if sign > 0:
+        targets[-1] = sign * target_rate
+        if len(targets) >= 2:
+            targets[-2] = sign
+        start = len(targets) - 3
+        exponent = 2 if penalty == 'soft' else 4
+    else:
+        targets[-1] = sign * target_rate ** 2
+        if len(targets) >= 2:
+            targets[-2] = sign * target_rate
+        if len(targets) >= 3:
+            targets[-3] = sign
+        start = len(targets) - 4
+        exponent = 3 if penalty == 'soft' else 5
+
+    for index in range(start, -1, -1):
+        next_target = targets[index + 1]
+        targets[index] = sign * np.power(
+            abs(next_target) * target_rate,
+            exponent,
+        )
+
+    result = "Ganaste" if sign > 0 else "Perdiste"
+    print(f"{result} la partida {len(targets)}:{targets}")
 
 
 
-class Player(PlayerAgent):
+class CriticalMovePropagationAgent(PlayerAgent):
 
     def __init__(
         self,
@@ -91,6 +101,7 @@ class Player(PlayerAgent):
         penalty='soft',
         load_model=True,
         epsilon=0.2,
+        use_replay=True,
     ):
         """Inicializa un agente, su modelo opcional y sus datos de entrenamiento."""
         self.playerID = playerID
@@ -100,6 +111,8 @@ class Player(PlayerAgent):
         self.target_rate = target_rate
         self.penalty = penalty
         self.epsilon = epsilon
+        self.use_replay = use_replay
+        self.started_first = True
         self.replay_features = []
         self.replay_targets = []
         self.marker = None
@@ -164,13 +177,16 @@ class Player(PlayerAgent):
 
 
             if msg_winner is None:
-                self.target[-1] = 0.0
-                update_targets(0, self.target, self.target_rate, self.penalty)
+                update_targets(
+                    0,
+                    self.target,
+                    self.target_rate,
+                    self.penalty,
+                    self.started_first,
+                )
             elif msg_winner == self.playerID:
-                self.target[-1] = 1.0
                 update_targets(1, self.target, self.target_rate, self.penalty)
             else:
-                self.target[-1] = -1.0
                 update_targets(-1, self.target, self.target_rate, self.penalty)
 
             if self.model is None and self.load_model and os.path.exists(self.model_path):
@@ -187,10 +203,16 @@ class Player(PlayerAgent):
                     random_state=42,
                 )
 
-            self.replay_features.extend(self.features)
-            # Conservamos los retornos propagados, incluidos sus decimales.
-            self.replay_targets.extend(self.target)
-            self.model.partial_fit(self.replay_features, self.replay_targets)
+            if self.use_replay:
+                self.replay_features.extend(self.features)
+                self.replay_targets.extend(self.target)
+                training_features = self.replay_features
+                training_targets = self.replay_targets
+            else:
+                training_features = self.features
+                training_targets = self.target
+
+            self.model.partial_fit(training_features, training_targets)
             joblib.dump(self.model, self.model_path)
             self.features.clear()
             self.target.clear()

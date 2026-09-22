@@ -46,12 +46,12 @@ class Player(PlayerAgent):
             return
 
         m = message.split("%")
-        if m[0] == "move":
-            print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
-        if m[0] == "canceled":
-            print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
-        if m[0] == "start":
-            print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
+        # if m[0] == "move":
+        #    print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
+        # if m[0] == "canceled":
+        #     print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
+        # if m[0] == "start":
+        #     print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
         if m[0] == "end":
             print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
         pass

@@ -2,11 +2,15 @@
 # Autor: Santiago Marino
 # Email: santiago.mmarino@gmail.com
 # Año de desarrollo: 2026
+# Descripción: Agente experto que carga un modelo entrenado y elige la mejor jugada.
+
+"""Agente experto que evalúa movimientos usando un modelo entrenado."""
 
 import os
 
 import joblib
-from agents.ai.inverse_propagation_agent import encode_state_action, get_available_actions
+from agents.helpers.actions_extract import get_available_actions
+from agents.helpers.encoders import encode_state_action
 from tictactoe_engine import PlayerAgent
 
 
@@ -48,4 +52,4 @@ class ExpertAIAgent(PlayerAgent):
 
     def event(self, message):
         """Acepta eventos del motor; el agente experto no necesita procesarlos."""
-        pass
+        return None

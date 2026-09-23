@@ -2,27 +2,25 @@
 # Autor: Santiago Marino
 # Email: santiago.mmarino@gmail.com
 # Año de desarrollo: 2026
+# Descripción: Punto de entrada para ejecutar una partida humana contra el agente experto.
 
-from tictactoe_engine import TicTacToe
+"""Ejecuta una partida interactiva en terminal contra el agente experto."""
+
 from agents.agent_human import Player as HumanPlayer
 from expert_ai_agent import ExpertAIAgent
+from tictactoe_engine import TicTacToe
 
 
 
 player_1 = HumanPlayer(playerID=0, name="Humano")
 player_2 = ExpertAIAgent(name="AI Player 1")
 
-
-
-
 game = TicTacToe(player_1, player_2)
+
 
 def validate_action(action):
     """Comprueba que la accion esta dentro del tablero y apunta a una casilla libre."""
-    if action >= 0 and action < 9:
-        if game.state[action] is None:
-            return True
-    return False
+    return 0 <= action < 9 and game.state[action] is None
 
 def players_sync_broadcast(msg):
     """Envia el mismo mensaje a los dos agentes de la partida."""
@@ -52,7 +50,6 @@ draw_board(state)
 
 
 
-status = None
 while not game.done:
     player = game.players.get(game.current_player)
     game.sync(game.players.get(game.current_player), f"move% {game.state}")
@@ -62,10 +59,9 @@ while not game.done:
     if validate_action(action):
         status = game.step(action)
         draw_board(game.state)
-        #game.sync(game.players.get(game.current_player), f"status% {status}")
     else:
         game.sync(game.players.get(game.current_player), "canceled% game canceled")
         print(f"Casilla no valida.. el player {game.current_player} perdio la partida")
-        exit(0)
+        raise SystemExit(1)
 
 players_sync_broadcast(("end", status))

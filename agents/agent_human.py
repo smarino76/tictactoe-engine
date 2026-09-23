@@ -2,9 +2,10 @@
 # Autor: Santiago Marino
 # Email: santiago.mmarino@gmail.com
 # Año de desarrollo: 2026
+# Descripción: Implementación de un jugador humano para la partida en terminal.
 
-from tictactoe_engine import TicTacToe
-import numpy as np
+"""Jugador humano para interactuar con la partida desde la consola."""
+
 from tictactoe_engine import PlayerAgent
 
 
@@ -46,14 +47,7 @@ class Player(PlayerAgent):
             return
 
         m = message.split("%")
-        # if m[0] == "move":
-        #    print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
-        # if m[0] == "canceled":
-        #     print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
-        # if m[0] == "start":
-        #     print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
         if m[0] == "end":
             print(f"{self.player_name} recibe el estado: {m[1]}\n\n\n\n")
-        pass
         
 

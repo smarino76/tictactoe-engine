@@ -10,8 +10,8 @@ A lightweight Tic-Tac-Toe engine for exploring intelligent agents, reinforcement
 
 ## Languages
 
-- English: [README.md](README.md)
-- Español: [README.es.md](README.es.md)
+- Español: [README.md](README.md)
+- English: [README.en.md](README.en.md)
 - Italiano: [README.it.md](README.it.md)
 
 ## What this project does
@@ -22,7 +22,7 @@ This repository combines:
 - a base interface for human and automated players;
 - trainable agents based on small neural models;
 - reward-allocation strategies for earlier moves;
-- a simple way to train and play from the terminal.
+- a quick way to train and play from the terminal.
 
 ## Features
 
@@ -32,7 +32,7 @@ This repository combines:
   - inverse propagation;
   - critical-move propagation.
 - Model persistence via `joblib`.
-- Self-play training and interactive terminal gameplay.
+- Self-play training and terminal gameplay.
 
 ## Project structure
 
@@ -54,7 +54,7 @@ This repository combines:
 ├── requirements.txt
 ├── Dockerfile
 ├── README.md
-├── README.es.md
+├── README.en.md
 ├── README.it.md
 ├── LICENSE
 ├── AI Player 1_model.pkl
@@ -64,12 +64,12 @@ This repository combines:
 
 ## Requirements
 
-- Python 3.9 or newer
+- Python 3.9+
 - `numpy`
 - `scikit-learn`
 - `joblib`
 
-Install dependencies:
+Install:
 
 ```bash
 python -m pip install -r requirements.txt
@@ -83,7 +83,7 @@ python -m pip install -r requirements.txt
 python train.py 4000
 ```
 
-This runs self-play games and stores the trained models in the project root.
+This runs self-play games and saves the trained models in the project root.
 
 ### Play against the expert agent
 
@@ -112,14 +112,14 @@ while not game.done:
     state, reward, done, info = game.step(action)
 ```
 
-### Main methods
+### Core methods
 
 - `reset()`: creates a new empty board.
-- `state`: returns the current board state.
-- `valid_actions()`: returns available empty cells.
+- `state`: returns the current state.
+- `valid_actions()`: returns available empty positions.
 - `step(action)`: applies a move and returns `(state, reward, done, info)`.
 
-## Custom agent contract
+## Agent contract
 
 ```python
 from tictactoe_engine import PlayerAgent
@@ -141,7 +141,7 @@ class RandomAgent(PlayerAgent):
 An agent must implement:
 
 - `act(state)`: returns a valid action.
-- `event(message)`: optional callback for engine notifications and end-of-game updates.
+- `event(message)`: optional callback for game updates and end-of-match messages.
 
 ## Learning agents
 
@@ -149,21 +149,20 @@ An agent must implement:
 
 File: `agents/ai/inverse_propagation_agent.py`
 
-This agent assigns credit backward from the final outcome and scales the value of earlier moves according to the chosen penalty mode.
+This agent assigns credit backward from the final outcome, reducing the value of earlier moves according to the chosen penalty mode.
 
 ### Critical-move propagation agent
 
 File: `agents/ai/critical_move_propagation_agent.py`
 
-This agent gives more weight to strategically decisive actions near the end of the sequence, especially when they determine the result of the game.
+This agent prioritizes strategically important moves near the end of the game, especially when they determine the final outcome.
 
 ## Notes
 
-- The project is designed for research and experimentation.
+- The project is designed for experimentation and research.
 - It is intentionally lightweight and easy to extend.
-- Trained model files are saved in the project root and reused by the expert agent.
+- Trained model files are stored in the project root and reused by the expert agent.
 
 ## License
 
 This project is distributed under the MIT License. See [LICENSE](LICENSE).
-

@@ -2,6 +2,9 @@
 # Autor: Santiago Marino
 # Email: santiago.mmarino@gmail.com
 # Año de desarrollo: 2026
+# Descripción: Agente experimental con prioridad a movimientos estratégicos críticos.
+
+"""Agente entrenable que enfatiza movimientos decisivos al final de la partida."""
 
 import os
 
@@ -9,86 +12,9 @@ import joblib
 import numpy as np
 from tictactoe_engine import PlayerAgent
 from sklearn.neural_network import MLPRegressor
-
-GAME = 0
-REWARD = 1
-STATE = 2
-WINNER = 3
-
-
-def get_random_action(state):
-    """Elige al azar una de las acciones disponibles del tablero."""
-    available_actions = get_available_actions(state)
-    return np.random.choice(available_actions)
-
-def get_available_actions(state):
-    """Devuelve los indices de las casillas vacias del estado."""
-    return [i for i, x in enumerate(state) if x is None]
-
-def is_first_move(state):
-    """Indica si el tablero no contiene ningun movimiento."""
-    return all(x is None for x in state)
-
-
-def encode_state(state, own_marker):
-    """Convierte el tablero en valores numericos desde la perspectiva del agente."""
-    return [
-        0 if cell is None else 1 if cell == own_marker else -1
-        for cell in state
-    ]
-
-
-def encode_state_action(state, own_marker, action):
-    """Representa un estado junto con la accion que se esta evaluando."""
-    action_encoding = [0] * 9
-    action_encoding[action] = 1
-    return encode_state(state, own_marker) + action_encoding
-
-
-def update_targets(
-    value,
-    targets,
-    target_rate=0.9,
-    penalty='soft',
-    started_first=True,
-):
-    """Asigna credito dando prioridad a las acciones estrategicamente criticas."""
-    if not targets:
-        return
-
-    if value == 0:
-        draw_target = 0.0 if started_first else 0.25
-        targets[:] = [draw_target] * len(targets)
-        print(f"Empate en la partida {len(targets)}:{targets}")
-        return
-
-    sign = 1 if value > 0 else -1
-
-    if sign > 0:
-        targets[-1] = sign * target_rate
-        if len(targets) >= 2:
-            targets[-2] = sign
-        start = len(targets) - 3
-        exponent = 2 if penalty == 'soft' else 4
-    else:
-        targets[-1] = sign * target_rate ** 2
-        if len(targets) >= 2:
-            targets[-2] = sign * target_rate
-        if len(targets) >= 3:
-            targets[-3] = sign
-        start = len(targets) - 4
-        exponent = 3 if penalty == 'soft' else 5
-
-    for index in range(start, -1, -1):
-        next_target = targets[index + 1]
-        targets[index] = sign * np.power(
-            abs(next_target) * target_rate,
-            exponent,
-        )
-
-    result = "Ganaste" if sign > 0 else "Perdiste"
-    print(f"{result} la partida {len(targets)}:{targets}")
-
+from agents.helpers.encoders import encode_state_action
+from agents.helpers.actions_extract import get_available_actions, is_first_move
+from agents.algorithm.reward_functions import algorithm_critical_move_propagation
 
 
 class CriticalMovePropagationAgent(PlayerAgent):
@@ -98,7 +24,7 @@ class CriticalMovePropagationAgent(PlayerAgent):
         playerID=0,
         name="AI Player",
         target_rate=0.9,
-        penalty='soft',
+        penalty="soft",
         load_model=True,
         epsilon=0.2,
         use_replay=True,
@@ -141,7 +67,7 @@ class CriticalMovePropagationAgent(PlayerAgent):
             )
             action = available_actions[best_index]
 
-        # Guardamos el estado previo y la accion; el valor se conoce al final.
+        # El valor de la jugada se conoce al terminar la partida.
         self.features.append(
             encode_state_action(self.state, self.marker, action)
         )
@@ -177,7 +103,7 @@ class CriticalMovePropagationAgent(PlayerAgent):
 
 
             if msg_winner is None:
-                update_targets(
+                algorithm_critical_move_propagation(
                     0,
                     self.target,
                     self.target_rate,
@@ -185,9 +111,9 @@ class CriticalMovePropagationAgent(PlayerAgent):
                     self.started_first,
                 )
             elif msg_winner == self.playerID:
-                update_targets(1, self.target, self.target_rate, self.penalty)
+                algorithm_critical_move_propagation(1, self.target, self.target_rate, self.penalty)
             else:
-                update_targets(-1, self.target, self.target_rate, self.penalty)
+                algorithm_critical_move_propagation(-1, self.target, self.target_rate, self.penalty)
 
             if self.model is None and self.load_model and os.path.exists(self.model_path):
                 self.model = joblib.load(self.model_path)

@@ -2,6 +2,9 @@
 # Autor: Santiago Marino
 # Email: santiago.mmarino@gmail.com
 # Año de desarrollo: 2026
+# Descripción: Entrenamiento por autojuego de los agentes de aprendizaje.
+
+"""Bucle de entrenamiento de los agentes IA mediante partidas de autojuego."""
 
 import argparse
 import contextlib
@@ -10,7 +13,6 @@ import sys
 
 import agents.ai.critical_move_propagation_agent as cma
 import agents.ai.inverse_propagation_agent as ipa
-
 from tictactoe_engine import TicTacToe
 
 
@@ -60,7 +62,7 @@ def train(number_of_games, use_replay=True):
 		use_replay=use_replay,
 	)
  
-	player_2 = ipa.InversePorpagationAgent(
+	player_2 = ipa.InversePropagationAgent(
 		name="AI Player 2",
 		load_model=False,
 		penalty="hard",

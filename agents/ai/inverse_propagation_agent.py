@@ -2,6 +2,9 @@
 # Autor: Santiago Marino
 # Email: santiago.mmarino@gmail.com
 # Año de desarrollo: 2026
+# Descripción: Agente de propagación inversa con entrenamiento por redes neuronales.
+
+"""Agente entrenable con propagación inversa del resultado final de la partida."""
 
 import os
 
@@ -9,86 +12,20 @@ import joblib
 import numpy as np
 from tictactoe_engine import PlayerAgent
 from sklearn.neural_network import MLPRegressor
-
-GAME = 0
-REWARD = 1
-STATE = 2
-WINNER = 3
-
-
-def get_random_action(state):
-    """Elige al azar una de las acciones disponibles del tablero."""
-    available_actions = get_available_actions(state)
-    return np.random.choice(available_actions)
-
-def get_available_actions(state):
-    """Devuelve los indices de las casillas vacias del estado."""
-    return [i for i, x in enumerate(state) if x is None]
-
-def is_first_move(state):
-    """Indica si el tablero no contiene ningun movimiento."""
-    return all(x is None for x in state)
-
-
-def encode_state(state, own_marker):
-    """Convierte el tablero en valores numericos desde la perspectiva del agente."""
-    return [
-        0 if cell is None else 1 if cell == own_marker else -1
-        for cell in state
-    ]
-
-
-def encode_state_action(state, own_marker, action):
-    """Representa un estado junto con la accion que se esta evaluando."""
-    action_encoding = [0] * 9
-    action_encoding[action] = 1
-    return encode_state(state, own_marker) + action_encoding
-
-
-def update_targets(value, targets, target_rate=0.9, penalty='soft'):
-    """Propaga hacia atras el resultado de una partida sobre sus jugadas.
-
-    Los valores intermedios se reducen con ``target_rate`` y una penalizacion
-    distinta para victorias y derrotas, para entrenar al modelo con el contexto
-    de toda la secuencia.
-    """
-    if value == 1:
-        n = len(targets) - 1
-        for i in range(n - 1, -1, -1):
-            if targets[i] == 0:
-                if penalty == 'soft':
-                    targets[i] = np.power(targets[i + 1] * target_rate, 2)
-                elif penalty == 'hard': 
-                    targets[i] = np.power(targets[i + 1] * target_rate, 4)
-            else:
-                break
-        print(f"Ganaste la partida {len(targets)}:{targets}")
-
-    elif value == -1:
-        n = len(targets) - 1
-        for i in range(n - 1, -1, -1):
-            if targets[i] == 0:
-                if penalty == 'soft':
-                    targets[i] = np.power(targets[i + 1] * target_rate, 3)
-                elif penalty == 'hard': 
-                    targets[i] = np.power(targets[i + 1] * target_rate, 5)
-            else:
-                break
-        print(f"Perdiste la partida {len(targets)}:{targets}")
-
-    else:
-        print(f"Empate en la partida {len(targets)}:{targets}")
+from agents.helpers.encoders import encode_state_action
+from agents.helpers.actions_extract import get_available_actions, is_first_move
+from agents.algorithm.reward_functions import algorithm_simple_inverse_propagation
 
 
 
-class InversePorpagationAgent(PlayerAgent):
+class InversePropagationAgent(PlayerAgent):
 
     def __init__(
         self,
         playerID=0,
         name="AI Player",
         target_rate=0.9,
-        penalty='soft',
+        penalty="soft",
         load_model=True,
         epsilon=0.2,
         use_replay=True,
@@ -130,7 +67,7 @@ class InversePorpagationAgent(PlayerAgent):
             )
             action = available_actions[best_index]
 
-        # Guardamos el estado previo y la accion; el valor se conoce al final.
+        # El valor de la jugada se conoce al terminar la partida.
         self.features.append(
             encode_state_action(self.state, self.marker, action)
         )
@@ -167,13 +104,13 @@ class InversePorpagationAgent(PlayerAgent):
 
             if msg_winner is None:
                 self.target[-1] = 0.0
-                update_targets(0, self.target, self.target_rate, self.penalty)
+                algorithm_simple_inverse_propagation(0, self.target, self.target_rate, self.penalty)
             elif msg_winner == self.playerID:
                 self.target[-1] = 1.0
-                update_targets(1, self.target, self.target_rate, self.penalty)
+                algorithm_simple_inverse_propagation(1, self.target, self.target_rate, self.penalty)
             else:
                 self.target[-1] = -1.0
-                update_targets(-1, self.target, self.target_rate, self.penalty)
+                algorithm_simple_inverse_propagation(-1, self.target, self.target_rate, self.penalty)
 
             if self.model is None and self.load_model and os.path.exists(self.model_path):
                 self.model = joblib.load(self.model_path)
@@ -203,3 +140,7 @@ class InversePorpagationAgent(PlayerAgent):
             self.features.clear()
             self.target.clear()
             self.epsilon = max(0.05, self.epsilon * 0.999)
+
+
+# Backwards-compatible alias for the original public class name.
+InversePorpagationAgent = InversePropagationAgent

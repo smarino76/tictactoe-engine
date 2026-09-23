@@ -2,6 +2,9 @@
 # Autor: Santiago Marino
 # Email: santiago.mmarino@gmail.com
 # Año de desarrollo: 2026
+# Descripción: Motor principal del juego y contrato base para agentes.
+
+"""Motor principal del juego y contrato base para los agentes del proyecto."""
 
 import random
 from abc import ABC, abstractmethod

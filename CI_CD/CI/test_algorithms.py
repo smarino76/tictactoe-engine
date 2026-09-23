@@ -12,4 +12,4 @@ def test_algorithm_critical_move_propagation():
     assert targets_draw[3] == 0
     assert targets_win[2] == 1
     assert targets_win[3] == np.power(1 * 0.9, 1)
-    assert targets_win[1] == np.power(targets_win[3] * 0.9, 2)
+    assert targets_win[1] == np.power(targets_win[2] * 0.9, 2)

@@ -28,10 +28,10 @@ A small, extensible Tic-Tac-Toe environment for playing games between human, ran
 Install the runtime dependencies with:
 
 ```bash
-python -m pip install numpy scikit-learn joblib
+python -m pip install -r requirements.txt
 ```
 
-There is currently no `requirements.txt`; the command above lists the packages used by the project.
+The dependencies are listed in `requirements.txt`.
 
 ## Run A Game
 
@@ -58,6 +58,22 @@ python train.py 4000
 ```
 
 The argument is the number of self-play games and defaults to `4000` when omitted. Training writes `AI Player 1_model.pkl` and `AI Player 2_model.pkl` in the current directory. `run_game.py` uses `AI Player 1_model.pkl`.
+
+## Run with Docker
+
+Build the image from the project directory:
+
+```bash
+docker build -t tictactoe-ai .
+```
+
+Run the interactive game:
+
+```bash
+docker run --rm -it tictactoe-ai
+```
+
+The `-it` options are required because the human player enters moves through the terminal. The trained model files are copied into the image and loaded by `run_game.py`.
 
 ## Engine API
 
